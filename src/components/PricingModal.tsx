@@ -51,30 +51,93 @@ export const PricingModal: React.FC<PricingModalProps> = ({
     setLoading(true);
 
     try {
-      const response = await fetch('/api/chapa/initialize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: user.email,
-          userId: user.uid,
-          amount: 300,
-          simulate: forceSimulate,
-          returnUrl: `${window.location.origin}/?payment=success`
-        })
-      });
+      // 1. Safe API call: Try /api/pay (or /api/chapa/initialize)
+      let response: Response;
+      try {
+        response = await fetch('/api/pay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: user.email,
+            userId: user.uid,
+            amount: 300,
+            simulate: forceSimulate,
+            returnUrl: `${window.location.origin}/?payment=success`
+          })
+        });
 
+        // If /api/pay returned 404 or non-OK, try fallback to /api/chapa/initialize
+        if (response.status === 404) {
+          response = await fetch('/api/chapa/initialize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: user.email,
+              userId: user.uid,
+              amount: 300,
+              simulate: forceSimulate,
+              returnUrl: `${window.location.origin}/?payment=success`
+            })
+          });
+        }
+      } catch (networkErr: any) {
+        throw new Error('Payment service endpoint not found or invalid API key.');
+      }
+
+      // 1 & 2. Safe API Response Parsing:
+      // Check response.ok and ensure Content-Type is application/json BEFORE calling response.json()
+      const contentType = response.headers.get('content-type') || '';
+      const isJson = contentType.toLowerCase().includes('application/json');
+
+      if (!response.ok || !isJson) {
+        let serverMessage = '';
+        if (isJson) {
+          try {
+            const errJson = await response.json();
+            serverMessage = errJson?.message || errJson?.error || '';
+          } catch {
+            // Ignored - fallback below
+          }
+        } else {
+          try {
+            const textBody = await response.text();
+            console.warn('[Chapa Non-JSON Server Response]:', textBody.slice(0, 150));
+          } catch {
+            // Ignored
+          }
+        }
+
+        // Display user-friendly error message if endpoint not found or invalid key
+        throw new Error(
+          serverMessage || 'Payment service endpoint not found or invalid API key.'
+        );
+      }
+
+      // Safe to call response.json() now
       const data = await response.json();
 
-      if (!response.ok || data.status !== 'success') {
-        throw new Error(data.message || 'Failed to initialize Chapa payment transaction.');
+      if (data.status !== 'success') {
+        throw new Error(data.message || 'Payment service endpoint not found or invalid API key.');
       }
 
       if (data.isSimulated) {
         setCheckoutNotice(t.pricingSimulatingNotice);
-        const verifyRes = await fetch(`/api/chapa/verify/${data.txRef}`);
-        const verifyData = await verifyRes.json();
-        
-        if (verifyData.status === 'success') {
+        let verified = false;
+
+        try {
+          const verifyRes = await fetch(`/api/chapa/verify/${data.txRef}`);
+          const verifyContentType = verifyRes.headers.get('content-type') || '';
+          if (verifyRes.ok && verifyContentType.toLowerCase().includes('application/json')) {
+            const verifyData = await verifyRes.json();
+            if (verifyData.status === 'success') {
+              verified = true;
+            }
+          }
+        } catch (vErr) {
+          console.warn('[Verify Check Note]:', vErr);
+        }
+
+        if (verified) {
           recordTransaction({
             txRef: data.txRef,
             userId: user.uid,
@@ -89,11 +152,14 @@ export const PricingModal: React.FC<PricingModalProps> = ({
           setCheckoutNotice(t.pricingSuccessNotice);
           setTimeout(() => onClose(), 1500);
         } else {
-          await fetch('/api/chapa/simulate-success', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ txRef: data.txRef, userId: user.uid })
-          });
+          try {
+            await fetch('/api/chapa/simulate-success', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ txRef: data.txRef, userId: user.uid })
+            });
+          } catch {}
+
           recordTransaction({
             txRef: data.txRef,
             userId: user.uid,
@@ -112,8 +178,19 @@ export const PricingModal: React.FC<PricingModalProps> = ({
         window.location.href = data.checkoutUrl;
       }
     } catch (err: any) {
-      console.error('Chapa Initialization Error:', err);
-      setError(err.message || 'Payment initiation error.');
+      console.error('Chapa Payment Error:', err);
+      const rawMsg = String(err?.message || '');
+      if (
+        rawMsg.includes('Unexpected token') ||
+        rawMsg.includes('is not valid JSON') ||
+        rawMsg.includes('The page') ||
+        rawMsg.includes('<!DOCTYPE') ||
+        rawMsg.includes('Failed to fetch')
+      ) {
+        setError('Payment service endpoint not found or invalid API key.');
+      } else {
+        setError(rawMsg || 'Payment service endpoint not found or invalid API key.');
+      }
     } finally {
       setLoading(false);
     }

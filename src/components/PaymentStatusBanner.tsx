@@ -29,7 +29,13 @@ export const PaymentStatusBanner: React.FC<PaymentStatusBannerProps> = ({
       const targetRef = txRef || `omniscope_${currentUserId || 'user'}_${Date.now()}`;
 
       fetch(`/api/chapa/verify/${targetRef}`)
-        .then((res) => res.json())
+        .then(async (res) => {
+          const contentType = res.headers.get('content-type') || '';
+          if (!res.ok || !contentType.toLowerCase().includes('application/json')) {
+            throw new Error('Payment service endpoint not found or invalid API key.');
+          }
+          return res.json();
+        })
         .then(async (data) => {
           if (data.status === 'success' || isSimulate) {
             setStatus('success');

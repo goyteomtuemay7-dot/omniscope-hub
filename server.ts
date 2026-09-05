@@ -47,8 +47,9 @@ async function startServer() {
   });
 
   // 2. CHAPA PAYMENT INITIALIZATION
-  // POST /api/chapa/initialize
-  app.post("/api/chapa/initialize", async (req, res) => {
+  // POST /api/pay and POST /api/chapa/initialize
+  const handleChapaCheckout = async (req: express.Request, res: express.Response) => {
+    res.setHeader("Content-Type", "application/json");
     try {
       const { email, amount = 300, userId, returnUrl, simulate } = req.body;
 
@@ -114,9 +115,23 @@ async function startServer() {
         body: JSON.stringify(chapaPayload)
       });
 
+      const chapaContentType = chapaResponse.headers.get("content-type") || "";
+      if (!chapaResponse.ok || !chapaContentType.includes("application/json")) {
+        console.warn("[Chapa] Non-JSON or error response from Chapa API:", chapaResponse.status, chapaContentType);
+        // Fallback to simulation mode if Chapa test credentials are rate limited or invalid
+        return res.json({
+          status: "success",
+          message: "Chapa live link unavailable. Switched to test checkout simulator.",
+          txRef,
+          checkoutUrl: `${appUrl}/?simulate_checkout=true&tx_ref=${txRef}&amount=${amount}&email=${encodeURIComponent(email)}`,
+          isSimulated: true,
+          chapaError: "Payment service endpoint not found or invalid API key."
+        });
+      }
+
       const chapaData = await chapaResponse.json();
 
-      if (!chapaResponse.ok || chapaData.status !== "success") {
+      if (chapaData.status !== "success") {
         console.warn("[Chapa] Chapa API returned non-success response:", chapaData);
         // Fallback to simulation mode if Chapa test credentials are rate limited or invalid
         return res.json({
@@ -125,7 +140,7 @@ async function startServer() {
           txRef,
           checkoutUrl: `${appUrl}/?simulate_checkout=true&tx_ref=${txRef}&amount=${amount}&email=${encodeURIComponent(email)}`,
           isSimulated: true,
-          chapaError: chapaData.message || "Chapa rejected credentials"
+          chapaError: chapaData.message || "Payment service endpoint not found or invalid API key."
         });
       }
 
@@ -140,9 +155,21 @@ async function startServer() {
       console.error("[Chapa Initialize Error]:", error);
       return res.status(500).json({
         status: "error",
-        message: error.message || "Failed to initialize Chapa transaction"
+        message: error.message || "Payment service endpoint not found or invalid API key."
       });
     }
+  };
+
+  // Mount at both /api/pay and /api/chapa/initialize
+  app.post("/api/pay", handleChapaCheckout);
+  app.post("/api/chapa/initialize", handleChapaCheckout);
+  app.get("/api/pay", (_req, res) => {
+    res.setHeader("Content-Type", "application/json");
+    res.json({
+      status: "ok",
+      endpoint: "/api/pay",
+      configured: Boolean(process.env.CHAPA_SECRET_KEY && !process.env.CHAPA_SECRET_KEY.includes("..."))
+    });
   });
 
   // Helper to activate user subscription in Firestore
