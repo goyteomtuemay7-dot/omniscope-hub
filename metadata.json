@@ -1,0 +1,6 @@
+{
+  "name": "Omniscope Hub",
+  "description": "Central Hub for the Ethiopian all-in-one opportunity and information ecosystem featuring Single Sign-On and Chapa ETB payment integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
