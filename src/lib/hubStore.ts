@@ -27,7 +27,15 @@ const STORAGE_KEYS = {
 export function getStoredBanners(): BannerSlide[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.BANNERS);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed: BannerSlide[] = JSON.parse(raw);
+      return parsed.map((b) => {
+        if (b.id === 'banner-1' || b.ctaText?.toLowerCase().includes('job')) {
+          return { ...b, ctaLink: 'https://omniscope-jobs-app.vercel.app' };
+        }
+        return b;
+      });
+    }
   } catch (_) {}
   return DEFAULT_BANNERS;
 }
@@ -35,7 +43,15 @@ export function getStoredBanners(): BannerSlide[] {
 export function getStoredApps(): AppService[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.APPS);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed: AppService[] = JSON.parse(raw);
+      return parsed.map((app) => {
+        if (app.id === 'app-jobs' || app.codeName === 'omniscope-jobs') {
+          return { ...app, externalUrl: 'https://omniscope-jobs-app.vercel.app' };
+        }
+        return app;
+      });
+    }
   } catch (_) {}
   return APPS_LIST;
 }

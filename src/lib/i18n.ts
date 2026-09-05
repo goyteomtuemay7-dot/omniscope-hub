@@ -74,6 +74,7 @@ export const translations = {
     activeBadge: 'Active',
     upcomingBadge: 'Upcoming',
     exploreBtn: 'Explore',
+    exploreJobsBtn: 'Explore Jobs',
     openAppBtn: 'Open App',
 
     // Application Details Modal
@@ -183,6 +184,7 @@ export const translations = {
     activeBadge: 'ንቁ',
     upcomingBadge: 'በቅርቡ',
     exploreBtn: 'ያስሱ',
+    exploreJobsBtn: 'ስራዎችን ያስሱ',
     openAppBtn: 'መተግበሪያውን ይክፈቱ',
 
     // Application Details Modal
@@ -292,6 +294,7 @@ export const translations = {
     activeBadge: 'Hojjechaa Jira',
     upcomingBadge: 'Gara Fuulduraatti',
     exploreBtn: 'Daawwadhaa',
+    exploreJobsBtn: 'Hojiiwwan Daawwadhaa',
     openAppBtn: 'Aplikeeshinii Bani',
 
     // Application Details Modal
@@ -401,6 +404,7 @@ export const translations = {
     activeBadge: 'ንጡፍ',
     upcomingBadge: 'ኣብ ቀረባ',
     exploreBtn: 'ዳህስሱ',
+    exploreJobsBtn: 'ስራሕቲ ዳህስሱ',
     openAppBtn: 'መተግበሪ ኽፈቱ',
 
     // Application Details Modal

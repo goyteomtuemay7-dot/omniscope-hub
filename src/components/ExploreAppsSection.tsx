@@ -58,6 +58,11 @@ export const ExploreAppsSection: React.FC<ExploreAppsSectionProps> = ({
   };
 
   const handleAppAction = (app: AppService) => {
+    if (app.codeName === 'omniscope-jobs' || app.id === 'app-jobs' || app.externalUrl) {
+      window.open(app.externalUrl || 'https://omniscope-jobs-app.vercel.app', '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     if (app.status === 'active') {
       if (!user) {
         // Visitor attempting protected functionality -> show details modal with clear message
@@ -66,12 +71,7 @@ export const ExploreAppsSection: React.FC<ExploreAppsSectionProps> = ({
         // Authenticated but not subscribed -> show details modal with subscribe prompt
         setSelectedApp(app);
       } else {
-        // Active & Subscribed -> launch directly!
-        if (app.codeName === 'omniscope-jobs') {
-          onOpenJobsApp();
-        } else {
-          setSelectedApp(app);
-        }
+        setSelectedApp(app);
       }
     } else {
       // Coming soon or informational
@@ -146,13 +146,25 @@ export const ExploreAppsSection: React.FC<ExploreAppsSectionProps> = ({
                     {app.stats || app.category}
                   </span>
 
-                  <button
-                    onClick={() => handleAppAction(app)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-xs font-bold transition cursor-pointer"
-                  >
-                    <span>{isActive && isSubscribed ? 'Open App' : 'Explore / Learn More'}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  {app.externalUrl || app.codeName === 'omniscope-jobs' || app.id === 'app-jobs' ? (
+                    <a
+                      href={app.externalUrl || 'https://omniscope-jobs-app.vercel.app'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                    >
+                      <span>Explore Jobs</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => handleAppAction(app)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-xs font-bold transition cursor-pointer"
+                    >
+                      <span>{isActive && isSubscribed ? 'Open App' : 'Explore / Learn More'}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             );

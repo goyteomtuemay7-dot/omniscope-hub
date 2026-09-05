@@ -19,7 +19,7 @@ export const DEFAULT_BANNERS: BannerSlide[] = [
     tag: 'Active Application',
     badge: 'Live Opportunities',
     ctaText: 'Explore Jobs',
-    ctaLink: '#explore-omniscope',
+    ctaLink: 'https://omniscope-jobs-app.vercel.app',
     bgGradient: 'from-blue-600 via-indigo-600 to-blue-800',
     active: true,
     order: 1,
@@ -75,6 +75,7 @@ export const APPS_LIST: AppService[] = [
     category: 'Employment & Careers',
     badge: 'Active & Verified',
     stats: '1,420+ Open Positions',
+    externalUrl: 'https://omniscope-jobs-app.vercel.app',
     features: [
       'Verified corporate & NGO listings (Telebirr, CBE, UNDP, Chapa)',
       'Direct one-click application submission',

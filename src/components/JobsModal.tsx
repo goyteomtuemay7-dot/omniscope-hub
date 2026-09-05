@@ -73,13 +73,25 @@ export const JobsModal: React.FC<JobsModalProps> = ({
             </div>
           </div>
 
-          <button
-            id="close-jobs-modal"
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href="https://omniscope-jobs-app.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs"
+            >
+              <span>Open Deployed App</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+
+            <button
+              id="close-jobs-modal"
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Search & Filter Strip */}

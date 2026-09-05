@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Layers,
   ArrowRight,
+  ExternalLink,
   Lock,
   CheckCircle2,
   X,
@@ -73,18 +74,20 @@ export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({
   };
 
   const handleAction = (app: AppService) => {
+    // If it's OmniScope Jobs or has externalUrl, redirect directly to deployed application
+    if (app.codeName === 'omniscope-jobs' || app.id === 'app-jobs' || app.externalUrl) {
+      const targetUrl = app.externalUrl || 'https://omniscope-jobs-app.vercel.app';
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     if (app.status === 'active') {
       if (!user) {
         setSelectedApp(app);
       } else if (!isSubscribed) {
         setSelectedApp(app);
       } else {
-        // Subscribed and active -> open directly!
-        if (app.codeName === 'omniscope-jobs') {
-          onOpenJobsApp();
-        } else {
-          setSelectedApp(app);
-        }
+        setSelectedApp(app);
       }
     } else {
       setSelectedApp(app);
@@ -92,7 +95,7 @@ export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({
   };
 
   return (
-    <section className="w-full py-8 sm:py-12 px-4 sm:px-6 lg:px-8 bg-white">
+    <section id="applications-section" className="w-full py-8 sm:py-12 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-4xl mx-auto">
         {/* Section Title */}
         <div className="mb-6 flex items-center justify-between">
@@ -125,21 +128,31 @@ export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredApps.map((app) => {
               const isActive = app.status === 'active';
+              const isJobsApp = app.codeName === 'omniscope-jobs' || app.id === 'app-jobs';
+              const appUrl = app.externalUrl || (isJobsApp ? 'https://omniscope-jobs-app.vercel.app' : undefined);
 
               return (
                 <div
                   key={app.id}
-                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all flex flex-col justify-between"
+                  id={`app-card-${app.id}`}
+                  onClick={() => {
+                    if (appUrl) {
+                      window.open(appUrl, '_blank', 'noopener,noreferrer');
+                    } else {
+                      handleAction(app);
+                    }
+                  }}
+                  className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group"
                 >
                   <div>
                     {/* Top Row: Icon & Name */}
                     <div className="flex items-start gap-3 mb-2.5">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 group-hover:bg-blue-600 group-hover:text-white text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 transition-colors">
                         {getIcon(app.icon)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
-                          <h3 className="text-base font-bold text-slate-900 truncate">
+                          <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate">
                             {app.name}
                           </h3>
                           {isActive ? (
@@ -170,13 +183,33 @@ export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({
                       {app.stats || 'Integrated'}
                     </span>
 
-                    <button
-                      onClick={() => handleAction(app)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-xs font-bold transition cursor-pointer"
-                    >
-                      <span>{isActive && isSubscribed ? t.openAppBtn : t.exploreBtn}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+                    {appUrl ? (
+                      <a
+                        id={`link-${app.id}`}
+                        href={appUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                      >
+                        <span>{isJobsApp ? (t.exploreJobsBtn || 'Explore Jobs') : (isActive && isSubscribed ? t.openAppBtn : t.exploreBtn)}</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <button
+                        id={`btn-${app.id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAction(app);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-xs font-bold transition cursor-pointer"
+                      >
+                        <span>{isActive && isSubscribed ? t.openAppBtn : t.exploreBtn}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -242,26 +275,39 @@ export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({
                 </div>
               </div>
 
-              {/* Subscribed & Active */}
-              {selectedApp.status === 'active' && user && isSubscribed && (
+              {/* OmniScope Jobs direct external link */}
+              {(selectedApp.codeName === 'omniscope-jobs' || selectedApp.id === 'app-jobs' || selectedApp.externalUrl) ? (
+                <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 flex items-center justify-between gap-2">
+                  <div>
+                    <span className="font-bold text-xs block">OmniScope Jobs Web App</span>
+                    <span className="text-[11px] text-blue-700">omniscope-jobs-app.vercel.app</span>
+                  </div>
+                  <a
+                    href={selectedApp.externalUrl || 'https://omniscope-jobs-app.vercel.app'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setSelectedApp(null)}
+                    className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs cursor-pointer transition inline-flex items-center gap-1.5 shadow-xs shrink-0"
+                  >
+                    <span>{t.exploreJobsBtn || 'Explore Jobs'}</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              ) : selectedApp.status === 'active' && user && isSubscribed ? (
+                /* Subscribed & Active Other App */
                 <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center justify-between">
                   <span className="font-semibold text-xs">{t.modalSubActive}</span>
                   <button
                     onClick={() => {
                       setSelectedApp(null);
-                      if (selectedApp.codeName === 'omniscope-jobs') {
-                        onOpenJobsApp();
-                      }
                     }}
                     className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer transition"
                   >
                     {t.modalOpenNow}
                   </button>
                 </div>
-              )}
-
-              {/* Unauthenticated or Inactive */}
-              {selectedApp.status === 'active' && (!user || !isSubscribed) && (
+              ) : selectedApp.status === 'active' && (!user || !isSubscribed) ? (
+                /* Unauthenticated or Inactive Other App */
                 <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 space-y-3">
                   <div className="flex items-start gap-2.5">
                     <Lock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -301,7 +347,7 @@ export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({
                     )}
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
 
             {/* Modal Footer */}

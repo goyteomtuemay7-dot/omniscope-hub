@@ -237,7 +237,9 @@ export default function App() {
           banners={localizedBanners}
           intervalSeconds={settings.bannerIntervalSeconds || 3}
           onCtaClick={(link) => {
-            if (link?.startsWith('#')) {
+            if (link && (link.startsWith('http://') || link.startsWith('https://'))) {
+              window.open(link, '_blank', 'noopener,noreferrer');
+            } else if (link?.startsWith('#')) {
               const target = document.querySelector(link);
               if (target) target.scrollIntoView({ behavior: 'smooth' });
             } else {
@@ -265,7 +267,9 @@ export default function App() {
           currentLanguage={language}
           onOpenAuth={(mode) => openAuthWithMode(mode || 'signin')}
           onOpenSubscription={() => setIsPricingModalOpen(true)}
-          onOpenJobsApp={() => setIsJobsModalOpen(true)}
+          onOpenJobsApp={() => {
+            window.open('https://omniscope-jobs-app.vercel.app', '_blank', 'noopener,noreferrer');
+          }}
         />
 
         {/* 6. About OmniScope (Short, simple description at bottom) */}
